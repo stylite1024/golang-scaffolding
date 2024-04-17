@@ -1,5 +1,14 @@
 package config
 
+type AppConfig struct {
+	*ApplicationConfig `mapstructure:"application"`
+	*LogConfig         `mapstructure:"log"`
+}
+
+type ApplicationConfig struct {
+	Mode    string `mapstructure:"mode"`
+}
+
 type LogConfig struct {
 	Mode          string `mapstructure:"mode"`
 	InfoFilename  string `mapstructure:"info_filename"`

@@ -25,8 +25,10 @@ var (
 )
 
 func setup() {
-	conf := config.LogConfig{
-		Mode:          "dev",
+	applicationConfig := config.ApplicationConfig{
+		Mode: "dev",
+	}
+	logConfig := config.LogConfig{
 		InfoFilename:  "logs/info.log",
 		ErrorFilename: "logs/error.log",
 		MaxSize:       200,
@@ -35,7 +37,7 @@ func setup() {
 		Compress:      true,
 	}
 	// 初始化日志
-	logger.Setup(conf)
+	logger.Setup(applicationConfig, logConfig)
 }
 
 func completionCommand() *cobra.Command {

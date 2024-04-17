@@ -15,7 +15,7 @@ import (
 var lg *zap.Logger
 
 // 初始化zap logger
-func Setup(conf config.LogConfig) (err error) {
+func Setup(applicationConfig config.ApplicationConfig,logConf config.LogConfig) (err error) {
 	var core zapcore.Core
 
 	encoder := getEncoder()
@@ -30,14 +30,14 @@ func Setup(conf config.LogConfig) (err error) {
 
 	// 按大小切割
 	// 获取 info、error日志文件的io.Writer 抽象 getWriter() 在下方实现
-	infoWriter := getLogWriterBySize(conf.InfoFilename, conf.MaxSize, conf.MaxBackups, conf.MaxAge, conf.Compress)
-	errorWriter := getLogWriterBySize(conf.ErrorFilename, conf.MaxSize, conf.MaxBackups, conf.MaxAge, conf.Compress)
+	infoWriter := getLogWriterBySize(logConf.InfoFilename, logConf.MaxSize, logConf.MaxBackups, logConf.MaxAge, logConf.Compress)
+	errorWriter := getLogWriterBySize(logConf.ErrorFilename, logConf.MaxSize, logConf.MaxBackups, logConf.MaxAge, logConf.Compress)
 
 	// 按时间切割
 	// infoWriter := getLogWriterByTime(conf.InfoFilename, conf.MaxAge)
 	// errorWriter := getLogWriterByTime(conf.ErrorFilename, conf.MaxAge)
 
-	if conf.Mode == "dev" {
+	if applicationConfig.Mode == "dev" {
 		// 进入开发模式，日志输出到终端
 		// console不同级别日志颜色方案：https://github.com/uber-go/zap/pull/307
 		config := zap.NewDevelopmentEncoderConfig()
