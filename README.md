@@ -1,4 +1,4 @@
-# go-scroffolding
+# golang-scaffolding
 [![License](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/go-admin-team/go-admin)
 
 一个基于cobra的golang脚手架，可用于快速开发现代 CLI 应用程序。
