@@ -94,7 +94,7 @@ cobra-cli add [command]
 打开go.mod文件，修改module,并且修改相关引用包
 
 # 修改版本信息和logo
-# 打开pkg\common\info.go修改
+打开pkg\common\info.go修改
 
 # 打包到不同平台
 make all
