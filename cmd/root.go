@@ -4,9 +4,11 @@ import (
 	"go-app/pkg/common"
 	"go-app/pkg/config"
 	"go-app/pkg/logger"
+	"go-app/pkg/tools"
 	"os"
 
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 )
 
 var (
@@ -29,15 +31,16 @@ func setup() {
 		Mode: "dev",
 	}
 	logConfig := config.LogConfig{
-		InfoFilename:  "logs/info.log",
-		ErrorFilename: "logs/error.log",
-		MaxSize:       200,
-		MaxAge:        30,
-		MaxBackups:    7,
-		Compress:      true,
+		LogLevel:    "info",
+		LogFilename: "logs/app.log",
+		MaxSize:     200,
+		MaxAge:      30,
+		MaxBackups:  7,
+		Compress:    true,
 	}
 	// 初始化日志
-	logger.Setup(applicationConfig, logConfig)
+	logger.Setup(&logConfig, applicationConfig.Mode)
+	zap.L().Error(tools.Red("aaa"))
 }
 
 func completionCommand() *cobra.Command {
