@@ -62,7 +62,7 @@ func run() {
 
 	// 启动http服务器
 	router.RunServer()
-	// 访问http://localhost:8000/api/v1/测试
+	// 访问http://localhost:8000/api/v1/
 }
 
 func setup() {
