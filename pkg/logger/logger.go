@@ -2,6 +2,7 @@ package logger
 
 import (
 	"go-app/pkg/config"
+	"go-app/pkg/tools"
 	"os"
 
 	"time"
@@ -15,7 +16,7 @@ import (
 var lg *zap.Logger
 
 // 初始化zap logger
-func Setup(applicationConfig config.ApplicationConfig,logConf config.LogConfig) (err error) {
+func Setup(conf *config.LogConfig, mode string) (err error) {
 	var core zapcore.Core
 
 	encoder := getEncoder()
@@ -30,14 +31,14 @@ func Setup(applicationConfig config.ApplicationConfig,logConf config.LogConfig) 
 
 	// 按大小切割
 	// 获取 info、error日志文件的io.Writer 抽象 getWriter() 在下方实现
-	infoWriter := getLogWriterBySize(logConf.InfoFilename, logConf.MaxSize, logConf.MaxBackups, logConf.MaxAge, logConf.Compress)
-	errorWriter := getLogWriterBySize(logConf.ErrorFilename, logConf.MaxSize, logConf.MaxBackups, logConf.MaxAge, logConf.Compress)
+	infoWriter := getLogWriterBySize(conf.InfoFilename, conf.MaxSize, conf.MaxBackups, conf.MaxAge, conf.Compress)
+	errorWriter := getLogWriterBySize(conf.ErrorFilename, conf.MaxSize, conf.MaxBackups, conf.MaxAge, conf.Compress)
 
 	// 按时间切割
 	// infoWriter := getLogWriterByTime(conf.InfoFilename, conf.MaxAge)
 	// errorWriter := getLogWriterByTime(conf.ErrorFilename, conf.MaxAge)
 
-	if applicationConfig.Mode == "dev" {
+	if mode == "dev" {
 		// 进入开发模式，日志输出到终端
 		// console不同级别日志颜色方案：https://github.com/uber-go/zap/pull/307
 		config := zap.NewDevelopmentEncoderConfig()
@@ -57,6 +58,7 @@ func Setup(applicationConfig config.ApplicationConfig,logConf config.LogConfig) 
 	}
 	lg = zap.New(core, zap.AddCaller()) // 需要传入 zap.AddCaller() 才会显示打日志点的文件名和行数, 有点小坑
 	zap.ReplaceGlobals(lg)
+	zap.L().Info(tools.Green("logger init success !"))
 	return
 }
 

@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"go-app/pkg/common"
-	"go-app/pkg/config"
-	"go-app/pkg/logger"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -14,31 +12,12 @@ var (
 		Use:          "go-app",
 		Short:        "go-app",
 		SilenceUsage: true,
-		PreRun: func(cmd *cobra.Command, args []string) {
-			setup()
-		},
 		Run: func(cmd *cobra.Command, args []string) {
 			common.Tip()
 			common.HelpTip()
 		},
 	}
 )
-
-func setup() {
-	applicationConfig := config.ApplicationConfig{
-		Mode: "dev",
-	}
-	logConfig := config.LogConfig{
-		InfoFilename:  "logs/info.log",
-		ErrorFilename: "logs/error.log",
-		MaxSize:       200,
-		MaxAge:        30,
-		MaxBackups:    7,
-		Compress:      true,
-	}
-	// 初始化日志
-	logger.Setup(applicationConfig, logConfig)
-}
 
 func completionCommand() *cobra.Command {
 	return &cobra.Command{

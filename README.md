@@ -1,7 +1,9 @@
-# golang-scaffolding
+# go-scroffolding
 [![License](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/go-admin-team/go-admin)
 
 一个基于cobra的golang脚手架，可用于快速开发现代 CLI 应用程序。
+
+- 当前分支为[web](https://github.com/stylite1024/golang-scaffolding/tree/web)，支持gorm
 
 
 
@@ -92,9 +94,6 @@ cobra-cli add [command]
 
 # 修改项目名
 打开go.mod文件，修改module,并且修改相关引用包
-
-# 修改版本信息和logo
-打开pkg\common\info.go修改
 
 # 打包到不同平台
 make all
