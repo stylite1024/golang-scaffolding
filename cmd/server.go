@@ -7,10 +7,9 @@ import (
 	"go-app/pkg/config"
 	"go-app/pkg/database"
 	"go-app/pkg/logger"
-	"net/http"
+	"go-app/pkg/router"
 	"os"
 
-	"github.com/gin-gonic/gin"
 	"github.com/spf13/cobra"
 )
 
@@ -61,17 +60,9 @@ func run() {
 	// }
 	// fmt.Println("user", val)
 
-	r := gin.Default()
-
-	// 使用zap记录gin日志
-	r.Use(logger.GinLogger(), logger.GinRecovery(true))
-
-	// 测试路由
-	r.GET("/ping", func(c *gin.Context) {
-		c.String(http.StatusOK, "pong")
-	})
-	// 启动服务器
-	r.Run(config.Conf.ApplicationConfig.Host + ":" + config.Conf.ApplicationConfig.Port)
+	// 启动http服务器
+	router.RunServer()
+	// 访问http://localhost:8000/api/v1/测试
 }
 
 func setup() {
