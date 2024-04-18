@@ -25,3 +25,7 @@ logs
 
 # bin
 bin
+
+# db
+*.db
+config.yml
