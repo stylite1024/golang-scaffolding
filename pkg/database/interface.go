@@ -1,6 +1,8 @@
 package database
 
-import "gorm.io/gorm"
+import (
+	"gorm.io/gorm"
+)
 
 // Database 数据库配置
 type Database interface {

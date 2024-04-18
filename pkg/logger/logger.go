@@ -39,7 +39,10 @@ func Setup(cfg *config.LogConfig, mode string) (err error) {
 			zapcore.NewCore(encoder, writeSyncer, l),
 		)
 	} else {
-		core = zapcore.NewCore(encoder, writeSyncer, l)
+		core = zapcore.NewTee(
+			zapcore.NewCore(encoder, writeSyncer, l),
+		)
+
 	}
 
 	lg = zap.New(core, zap.AddCaller())

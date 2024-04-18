@@ -1,17 +1,17 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
+	"go-app/pkg/common"
 	"go-app/pkg/config"
 	"go-app/pkg/database"
 	"go-app/pkg/logger"
-	"go-app/pkg/tools"
 	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cobra"
-	"go.uber.org/zap"
 )
 
 var (
@@ -30,7 +30,37 @@ var (
 	}
 )
 
+var ctx = context.Background()
+
+// UserInfo 用户信息
+type UserInfo struct {
+	ID     uint
+	Name   string
+	Gender string
+	Hobby  string
+}
+
 func run() {
+	var db = common.DB
+	// 查询
+	var u = new(UserInfo)
+	db.First(u)
+	fmt.Printf("%#v\n", u)
+
+	// // 测试redis
+	// // 设置一个key，过期时间为0，意思就是永远不过期
+	// err := common.RDS.Set(ctx, "user", "1", 0).Err()
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// // 根据key查询缓存，通过Result函数返回两个值
+	// val, err := common.RDS.Get(ctx, "user").Result()
+	// // 检测，查询是否出错
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// fmt.Println("user", val)
+
 	r := gin.Default()
 
 	// 使用zap记录gin日志
@@ -56,10 +86,9 @@ func setup() {
 
 	// 3、初始化redis
 	// redis.Setup(config.Conf.RedisConfig)
-	zap.L().Error(tools.Red("aaa"))
 
 	// 4、初始化mysql
-	database.Setup(config.Conf.DatabaseConfig.Driver)
+	database.Setup(config.Conf.Driver)
 }
 
 func init() {
