@@ -22,6 +22,14 @@ func SetupRouter() *gin.Engine {
 
 	r.Use(logger.GinLogger(), logger.GinRecovery(true))
 
+    // 前端项目静态资源
+    r.StaticFile("/", "./static/dist/index.html")
+    r.Static("/assets", "./static/dist/assets")
+    r.StaticFile("/favicon.ico", "./static/dist/favicon.ico")
+    // 其他静态资源
+    r.Static("/public", "./static")
+    r.Static("/storage", "./storage/app/public")
+
 	// 注册 api 分组路由
 	apiGroup := r.Group("/api/v1")
 	apis.SetApiGroupRoutes(apiGroup)
