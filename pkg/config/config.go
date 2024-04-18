@@ -18,15 +18,20 @@ type AppConfig struct {
 
 type ApplicationConfig struct {
 	Mode string `mapstructure:"mode"`
+	Host string `mapstructure:"host"`
+	Port string `mapstructure:"port"`
 }
 
 type LogConfig struct {
-	InfoFilename  string `mapstructure:"info_filename"`
-	ErrorFilename string `mapstructure:"error_filename"`
-	MaxSize       int    `mapstructure:"max_size"`
-	MaxAge        int    `mapstructure:"max_age"`
-	MaxBackups    int    `mapstructure:"max_backups"`
-	Compress      bool   `mapstructure:"compress"`
+	InfoFilename   string `mapstructure:"info_filename"`
+	ErrorFilename  string `mapstructure:"error_filename"`
+	MaxSize        int    `mapstructure:"max_size"`
+	MaxAge         int    `mapstructure:"max_age"`
+	MaxBackups     int    `mapstructure:"max_backups"`
+	Compress       bool   `mapstructure:"compress"`
+	EnableSqlLog   bool   `mapstructure:"enable_sql_log"`
+	SqlLogLevel    string `mapstructure:"sql_log_level"`
+	SqlLogFilename string `mapstructure:"sql_log_filename"`
 }
 
 type DatabaseConfig struct {

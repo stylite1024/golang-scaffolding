@@ -1,21 +1,20 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
-	"go-app/pkg/common"
 	"go-app/pkg/config"
 	"go-app/pkg/database"
 	"go-app/pkg/logger"
 	"go-app/pkg/redis"
+	"net/http"
 	"os"
 
+	"github.com/gin-gonic/gin"
 	"github.com/spf13/cobra"
 )
 
 var (
 	configYml string
-	ctx       = context.Background()
 	serverCmd = &cobra.Command{
 		Use:          "server",
 		Short:        "start server",
@@ -25,42 +24,20 @@ var (
 			setup()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			db := common.DB
-			// 自动迁移
-			db.AutoMigrate(&UserInfo{})
-			u1 := UserInfo{1, "七米", "男", "篮球"}
-			u2 := UserInfo{2, "沙河娜扎", "女", "足球"}
-			// 创建记录
-			db.Create(&u1)
-			db.Create(&u2)
-			// 查询
-			var u = new(UserInfo)
-			db.First(u)
-			fmt.Printf("%#v\n", u)
-
-			// 测试redis
-			// 设置一个key，过期时间为0，意思就是永远不过期
-			err := common.RDS.Set(ctx, "user", "1", 0).Err()
-			if err != nil {
-				panic(err)
-			}
-			// 根据key查询缓存，通过Result函数返回两个值
-			val, err := common.RDS.Get(ctx, "user").Result()
-			// 检测，查询是否出错
-			if err != nil {
-				panic(err)
-			}
-			fmt.Println("user", val)
+			run()
 		},
 	}
 )
 
-// UserInfo 用户信息
-type UserInfo struct {
-	ID     uint
-	Name   string
-	Gender string
-	Hobby  string
+func run() {
+	r := gin.Default()
+
+	// 测试路由
+	r.GET("/ping", func(c *gin.Context) {
+		c.String(http.StatusOK, "pong")
+	})
+	// 启动服务器
+	r.Run(config.Conf.ApplicationConfig.Host + ":" + config.Conf.ApplicationConfig.Port)
 }
 
 func setup() {
