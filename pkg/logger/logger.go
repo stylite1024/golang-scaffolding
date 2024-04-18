@@ -2,12 +2,15 @@ package logger
 
 import (
 	"go-app/pkg/config"
-	"go-app/pkg/tools"
+	"net"
+	"net/http"
+	"net/http/httputil"
 	"os"
-
+	"runtime/debug"
+	"strings"
 	"time"
 
-	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
+	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -16,28 +19,15 @@ import (
 var lg *zap.Logger
 
 // 初始化zap logger
-func Setup(conf *config.LogConfig, mode string) (err error) {
-	var core zapcore.Core
-
+func Setup(cfg *config.LogConfig, mode string) (err error) {
+	writeSyncer := getLogWriter(cfg.LogFilename, cfg.MaxSize, cfg.MaxBackups, cfg.MaxAge)
 	encoder := getEncoder()
-
-	// // 实现两个判断日志等级的interface
-	infoLevel := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
-		return lvl >= zapcore.InfoLevel
-	})
-	errorLevel := zap.LevelEnablerFunc(func(lvl zapcore.Level) bool {
-		return lvl >= zapcore.ErrorLevel
-	})
-
-	// 按大小切割
-	// 获取 info、error日志文件的io.Writer 抽象 getWriter() 在下方实现
-	infoWriter := getLogWriterBySize(conf.InfoFilename, conf.MaxSize, conf.MaxBackups, conf.MaxAge, conf.Compress)
-	errorWriter := getLogWriterBySize(conf.ErrorFilename, conf.MaxSize, conf.MaxBackups, conf.MaxAge, conf.Compress)
-
-	// 按时间切割
-	// infoWriter := getLogWriterByTime(conf.InfoFilename, conf.MaxAge)
-	// errorWriter := getLogWriterByTime(conf.ErrorFilename, conf.MaxAge)
-
+	var l = new(zapcore.Level)
+	err = l.UnmarshalText([]byte(cfg.LogLevel))
+	if err != nil {
+		return
+	}
+	var core zapcore.Core
 	if mode == "dev" {
 		// 进入开发模式，日志输出到终端
 		// console不同级别日志颜色方案：https://github.com/uber-go/zap/pull/307
@@ -46,57 +36,104 @@ func Setup(conf *config.LogConfig, mode string) (err error) {
 		consoleEncoder := zapcore.NewConsoleEncoder(config)
 		core = zapcore.NewTee(
 			zapcore.NewCore(consoleEncoder, zapcore.Lock(os.Stdout), zapcore.DebugLevel),
-			zapcore.NewCore(encoder, infoWriter, infoLevel),
-			zapcore.NewCore(encoder, errorWriter, errorLevel),
+			zapcore.NewCore(encoder, writeSyncer, l),
 		)
 	} else {
-		// 创建具体的Logger
-		core = zapcore.NewTee(
-			zapcore.NewCore(encoder, infoWriter, zapcore.InfoLevel),
-			zapcore.NewCore(encoder, errorWriter, zap.ErrorLevel),
-		)
+		core = zapcore.NewCore(encoder, writeSyncer, l)
 	}
-	lg = zap.New(core, zap.AddCaller()) // 需要传入 zap.AddCaller() 才会显示打日志点的文件名和行数, 有点小坑
+
+	lg = zap.New(core, zap.AddCaller())
+
 	zap.ReplaceGlobals(lg)
-	zap.L().Info(tools.Green("logger init success !"))
+	zap.L().Info("init logger success")
 	return
 }
 
 func getEncoder() zapcore.Encoder {
 	encoderConfig := zap.NewProductionEncoderConfig()
 	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	encoderConfig.TimeKey = "ts"
+	encoderConfig.TimeKey = "time"
 	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
 	encoderConfig.EncodeDuration = zapcore.SecondsDurationEncoder
 	encoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
 	return zapcore.NewJSONEncoder(encoderConfig)
 }
 
-// 按大小切割
-func getLogWriterBySize(filename string, maxSize, maxBackup, maxAge int, compress bool) zapcore.WriteSyncer {
+func getLogWriter(filename string, maxSize, maxBackup, maxAge int) zapcore.WriteSyncer {
 	lumberJackLogger := &lumberjack.Logger{
 		Filename:   filename,
 		MaxSize:    maxSize,
 		MaxBackups: maxBackup,
 		MaxAge:     maxAge,
-		Compress:   compress,
-		LocalTime:  true,
 	}
 	return zapcore.AddSync(lumberJackLogger)
 }
 
-// 按时间切割
-// 根据时间切割，请看： https://www.jianshu.com/p/d729c7ec9c85
-func getLogWriterByTime(filename string, maxAge int) zapcore.WriteSyncer {
-	hook, err := rotatelogs.New(
-		filename+".%Y%m%d",
-		// strings.Replace(filename, ".log", "", -1)+"-%Y%m%d.log",
-		rotatelogs.WithLinkName(filename),
-		rotatelogs.WithMaxAge(time.Hour*24*time.Duration(maxAge)),
-		rotatelogs.WithRotationTime(time.Hour*24),
-	)
-	if err != nil {
-		panic(err)
+// GinLogger 接收gin框架默认的日志
+func GinLogger() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+		path := c.Request.URL.Path
+		query := c.Request.URL.RawQuery
+		c.Next()
+
+		cost := time.Since(start)
+		lg.Info(path,
+			zap.Int("status", c.Writer.Status()),
+			zap.String("method", c.Request.Method),
+			zap.String("path", path),
+			zap.String("query", query),
+			zap.String("ip", c.ClientIP()),
+			zap.String("user-agent", c.Request.UserAgent()),
+			zap.String("errors", c.Errors.ByType(gin.ErrorTypePrivate).String()),
+			zap.Duration("cost", cost),
+		)
 	}
-	return zapcore.AddSync(hook)
+}
+
+// GinRecovery recover掉项目可能出现的panic，并使用zap记录相关日志
+func GinRecovery(stack bool) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		defer func() {
+			if err := recover(); err != nil {
+				// Check for a broken connection, as it is not really a
+				// condition that warrants a panic stack trace.
+				var brokenPipe bool
+				if ne, ok := err.(*net.OpError); ok {
+					if se, ok := ne.Err.(*os.SyscallError); ok {
+						if strings.Contains(strings.ToLower(se.Error()), "broken pipe") || strings.Contains(strings.ToLower(se.Error()), "connection reset by peer") {
+							brokenPipe = true
+						}
+					}
+				}
+
+				httpRequest, _ := httputil.DumpRequest(c.Request, false)
+				if brokenPipe {
+					lg.Error(c.Request.URL.Path,
+						zap.Any("error", err),
+						zap.String("request", string(httpRequest)),
+					)
+					// If the connection is dead, we can't write a status to it.
+					c.Error(err.(error)) // nolint: errcheck
+					c.Abort()
+					return
+				}
+
+				if stack {
+					lg.Error("[Recovery from panic]",
+						zap.Any("error", err),
+						zap.String("request", string(httpRequest)),
+						zap.String("stack", string(debug.Stack())),
+					)
+				} else {
+					lg.Error("[Recovery from panic]",
+						zap.Any("error", err),
+						zap.String("request", string(httpRequest)),
+					)
+				}
+				c.AbortWithStatus(http.StatusInternalServerError)
+			}
+		}()
+		c.Next()
+	}
 }

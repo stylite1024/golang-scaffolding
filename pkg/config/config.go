@@ -23,20 +23,20 @@ type ApplicationConfig struct {
 }
 
 type LogConfig struct {
-	InfoFilename   string `mapstructure:"info_filename"`
-	ErrorFilename  string `mapstructure:"error_filename"`
-	MaxSize        int    `mapstructure:"max_size"`
-	MaxAge         int    `mapstructure:"max_age"`
-	MaxBackups     int    `mapstructure:"max_backups"`
-	Compress       bool   `mapstructure:"compress"`
-	EnableSqlLog   bool   `mapstructure:"enable_sql_log"`
-	SqlLogLevel    string `mapstructure:"sql_log_level"`
-	SqlLogFilename string `mapstructure:"sql_log_filename"`
+	LogLevel    string `mapstructure:"log_level"`
+	LogFilename string `mapstructure:"log_filename"`
+	MaxSize     int    `mapstructure:"max_size"`
+	MaxAge      int    `mapstructure:"max_age"`
+	MaxBackups  int    `mapstructure:"max_backups"`
+	Compress    bool   `mapstructure:"compress"`
 }
 
 type DatabaseConfig struct {
 	Driver string `mapstructure:"driver"`
 	Source string `mapstructure:"source"`
+	EnableSqlLog   bool   `mapstructure:"enable_sql_log"`
+	SqlLogLevel    string `mapstructure:"sql_log_level"`
+	SqlLogFilename string `mapstructure:"sql_log_filename"`
 }
 
 type RedisConfig struct {

@@ -5,12 +5,13 @@ import (
 	"go-app/pkg/config"
 	"go-app/pkg/database"
 	"go-app/pkg/logger"
-	"go-app/pkg/redis"
+	"go-app/pkg/tools"
 	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 )
 
 var (
@@ -32,6 +33,9 @@ var (
 func run() {
 	r := gin.Default()
 
+	// 使用zap记录gin日志
+	r.Use(logger.GinLogger(), logger.GinRecovery(true))
+
 	// 测试路由
 	r.GET("/ping", func(c *gin.Context) {
 		c.String(http.StatusOK, "pong")
@@ -51,7 +55,8 @@ func setup() {
 	logger.Setup(config.Conf.LogConfig, config.Conf.ApplicationConfig.Mode)
 
 	// 3、初始化redis
-	redis.Setup(config.Conf.RedisConfig)
+	// redis.Setup(config.Conf.RedisConfig)
+	zap.L().Error(tools.Red("aaa"))
 
 	// 4、初始化mysql
 	database.Setup(config.Conf.DatabaseConfig.Driver)
