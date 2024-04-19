@@ -7,7 +7,7 @@ import (
 	"go-app/pkg/config"
 	"go-app/pkg/database"
 	"go-app/pkg/logger"
-	"go-app/pkg/router"
+	"go-app/app/router"
 	"os"
 
 	"github.com/spf13/cobra"

@@ -2,10 +2,12 @@ package router
 
 import (
 	"context"
-	"go-app/app/admin/apis"
+
+	"go-app/app/apis"
+	"go-app/app/vali"
+	"go-app/app/middleware"
 	"go-app/pkg/config"
 	"go-app/pkg/logger"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -13,10 +15,16 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 // SetupRouter 路由
 func SetupRouter() *gin.Engine {
+	if err := vali.InitTrans("zh"); err != nil {
+		zap.L().Error("init trans failed, err:", zap.Error(err))
+		return nil
+	}
+
 	mode := config.Conf.Mode
 	if mode == "prod" {
 		gin.SetMode(gin.ReleaseMode)
@@ -28,6 +36,7 @@ func SetupRouter() *gin.Engine {
 	r := gin.New()
 
 	r.Use(logger.GinLogger(), logger.GinRecovery(true))
+	r.Use(middleware.UnifiedResponseMiddleware())
 
 	// 前端项目静态资源
 	r.StaticFile("/", "./static/dist/index.html")
@@ -40,6 +49,10 @@ func SetupRouter() *gin.Engine {
 	// 注册 api 分组路由
 	apiGroup := r.Group("/api/v1")
 	apis.SetApiGroupRoutes(apiGroup)
+
+	// 注册 register 分组路由
+	registerGroup := r.Group("/api/v1")
+	apis.SetRegisterGroupROutes(registerGroup)
 
 	return r
 }
@@ -56,7 +69,7 @@ func RunServer() {
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen: %s\n", err)
+			zap.L().Error("listen:", zap.Error(err))
 		}
 	}()
 
@@ -64,12 +77,12 @@ func RunServer() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-	log.Println("Shutdown Server ...")
+	zap.L().Info("Shutdown Server ...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatal("Server Shutdown:", err)
+		zap.L().Error("Server Shutdown:", zap.Error(err))
 	}
-	log.Println("Server exiting")
+	zap.L().Info("Server exiting")
 }

@@ -1,6 +1,7 @@
 package common
 
 import (
+	ut "github.com/go-playground/universal-translator"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
@@ -13,4 +14,6 @@ var (
 	DB     *gorm.DB
 	// redis
 	RDS *redis.Client
+	// validator
+	Trans ut.Translator
 )

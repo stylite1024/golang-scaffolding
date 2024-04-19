@@ -1,0 +1,17 @@
+# 测试校验器
+POST http://localhost:8002/api/v1/signup HTTP/1.1
+content-type: application/json
+
+{
+    "name": "abc",
+    "age": 140,
+    "email": "123.com",
+    "password": "123456",
+    "re_password": "12345gg6",
+    "mobile":"123456789"
+}
+
+###
+
+GET http://localhost:8002/api/v1/hello HTTP/1.1
+content-type: application/json
